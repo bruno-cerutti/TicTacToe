@@ -1,42 +1,62 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
+import styled, { css } from 'styled-components';
+//import './index.css';
 
-function Square(props) {
-    return (
-      <button className="square" onClick={props.onClick}>
-        {props.value}
-      </button>
-    );
-}
+const Square = styled.button`
+  background: #fff;
+  border: 1px solid #999;
+  float: left;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 34px;
+  height: 34px;
+  margin-right: -1px;
+  margin-top: -1px;
+  padding: 0;
+  text-align: center;
+  width: 34px;
+
+  ${props => props.value === 'X' && css`
+		background: palevioletred;
+		color: white;
+	`}
+  ${props => props.value === 'O' && css`
+		background: blue;
+		color: white;
+	`}
+`
+
+const BoardRow = styled.div`
+  clear: both;
+`
 
 class Board extends React.Component {
   renderSquare(i) {
+    let sq = this.props.squares[i];
     return (
-    <Square 
-        value={this.props.squares[i]}
-        onClick={() => this.props.onClick(i)}
-    />);
+      <Square value={sq} onClick={() => this.props.onClick(i)}>{sq}</Square>
+    );
   }
 
   render() {
     return (
       <div>
-        <div className="board-row">
+        <BoardRow>
           {this.renderSquare(0)}
           {this.renderSquare(1)}
           {this.renderSquare(2)}
-        </div>
-        <div className="board-row">
+        </BoardRow>
+        <BoardRow>
           {this.renderSquare(3)}
           {this.renderSquare(4)}
           {this.renderSquare(5)}
-        </div>
-        <div className="board-row">
+        </BoardRow>
+        <BoardRow>
           {this.renderSquare(6)}
           {this.renderSquare(7)}
           {this.renderSquare(8)}
-        </div>
+        </BoardRow>
       </div>
     );
   }
