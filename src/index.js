@@ -1,9 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import styled, { css } from 'styled-components';
-//import './index.css';
+import styled, { css, injectGlobal } from 'styled-components';
 
-const Square = styled.button`
+injectGlobal `
+  body {
+    font: 14px "Century Gothic", Futura, sans-serif;
+    margin: 20px;
+  }
+`;
+
+const Square = styled.button `
   background: #fff;
   border: 1px solid #999;
   float: left;
@@ -17,6 +23,14 @@ const Square = styled.button`
   text-align: center;
   width: 34px;
 
+  &:hover {
+    outline: none;
+  }
+
+  &:focus {
+    opacity:0.5;
+  }
+
   ${props => props.value === 'X' && css`
 		background: palevioletred;
 		color: white;
@@ -28,7 +42,28 @@ const Square = styled.button`
 `
 
 const BoardRow = styled.div`
+  &:after{
   clear: both;
+  content: "";
+  display: table;
+  }
+`
+
+const GameInfo = styled.div`
+  margin-left: 20px;
+`
+
+const GameMove = styled.ol`
+  padding-left: 30px;
+`
+
+const GameStatus = styled.div`
+  margin-bottom: 10px;
+`
+
+const GameBoard = styled.div`
+  display: flex;
+  flex-direction: row;
 `
 
 class Board extends React.Component {
@@ -122,17 +157,13 @@ class Game extends React.Component {
     }
 
     return (
-      <div className="game">
-        <div className="game-board">
-          <Board squares ={current.squares}
-                 onClick = {(i) => this.handleClick(i)}
-          />
-        </div>
-        <div className="game-info">
-          <div>{status}</div>
-          <ol>{moves}</ol>
-        </div>
-      </div>
+      <GameBoard>
+        <Board squares ={current.squares} onClick = {(i) => this.handleClick(i)} />
+        <GameInfo>
+          <GameStatus>{status}</GameStatus>
+          <GameMove>{moves}</GameMove>
+        </GameInfo>
+      </GameBoard>
     );
   }
 }
