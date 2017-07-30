@@ -204,7 +204,7 @@ class Game extends React.Component {
 
     return (
       <GameBoard>
-        <Board squares = {current.squares} />
+        <Board />
         <GameInfo>
           <GameStatus>{status}</GameStatus>
           <GameMoves>{moves}</GameMoves>
