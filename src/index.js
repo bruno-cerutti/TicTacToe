@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styled, { css, injectGlobal } from 'styled-components';
 import { createStore } from 'redux';
-import { Provider } from 'react-redux';
+import { Provider, connect } from 'react-redux';
 
 const historyApp = (state, action) => {
   if(state === undefined){
@@ -116,54 +116,39 @@ const GameMove = ({text, onClickHandler}) => (
   </li>
 );
 
-class Board extends React.Component {
-  componentDidMount() {
-    const { store } = this.context;
-    this.unsubscribe = store.subscribe(() => {
-      this.forceUpdate();
-    });
-  }
 
-  componentWillUnmount() {
-    this.unsubscribe();
+const mapStateToBoardProps = (state) => {
+  return {...state};
+};
+const mapDispatchToBoardProps = (dispatch) => {
+  return {
+    onSquareClick: (i) => dispatch({ type: "ADD_MOVE", squareIndex: i })
   }
-
-  renderSquare(i, sq) {
-    const { store } = this.context;
-    return (
-      <Square value={sq} onClick={() => store.dispatch({ type: "ADD_MOVE", squareIndex: i })}>{sq}</Square>
-    );
-  }
-
-  render() {
-    const { store } = this.context;
-    const state = store.getState();
-    const current = state.history[state.stepNumber];
+};
+let Board = ({history, stepNumber, onSquareClick}) => {
+  const current = history[stepNumber];
 
     return (
       <div>
         <BoardRow>
-          {this.renderSquare(0, current.squares[0])}
-          {this.renderSquare(1, current.squares[1])}
-          {this.renderSquare(2, current.squares[2])}
+          <Square value={current.squares[0]} onClick={() => onSquareClick(0)}>{current.squares[0]}</Square>
+          <Square value={current.squares[1]} onClick={() => onSquareClick(1)}>{current.squares[1]}</Square>
+          <Square value={current.squares[2]} onClick={() => onSquareClick(2)}>{current.squares[2]}</Square>
         </BoardRow>
         <BoardRow>
-          {this.renderSquare(3, current.squares[3])}
-          {this.renderSquare(4, current.squares[4])}
-          {this.renderSquare(5, current.squares[5])}
+          <Square value={current.squares[3]} onClick={() => onSquareClick(3)}>{current.squares[3]}</Square>
+          <Square value={current.squares[4]} onClick={() => onSquareClick(4)}>{current.squares[4]}</Square>
+          <Square value={current.squares[5]} onClick={() => onSquareClick(5)}>{current.squares[5]}</Square>
         </BoardRow>
         <BoardRow>
-          {this.renderSquare(6, current.squares[6])}
-          {this.renderSquare(7, current.squares[7])}
-          {this.renderSquare(8, current.squares[8])}
+          <Square value={current.squares[6]} onClick={() => onSquareClick(6)}>{current.squares[6]}</Square>
+          <Square value={current.squares[7]} onClick={() => onSquareClick(7)}>{current.squares[7]}</Square>
+          <Square value={current.squares[8]} onClick={() => onSquareClick(8)}>{current.squares[8]}</Square>
         </BoardRow>
       </div>
     );
-  }
 }
-Board.contextTypes = {
-  store: React.PropTypes.object
-};
+Board = connect(mapStateToBoardProps, mapDispatchToBoardProps)(Board);
 
 class Game extends React.Component {
   componentDidMount() {
