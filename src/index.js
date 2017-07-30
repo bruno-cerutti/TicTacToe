@@ -1,6 +1,49 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import styled, { css, injectGlobal } from 'styled-components';
+import { createStore } from 'redux';
+
+const historyApp = (state, action) => {
+  if(state === undefined){
+    state = {
+      history: [{
+          squares: Array(9).fill(null),
+          winner: null,
+          xRules: true
+        }],
+      stepNumber: 0
+      };
+  }
+
+  switch (action.type) {
+    case 'ADD_MOVE':
+      const history = state.history.slice(0, state.stepNumber + 1);
+      const current = history[history.length-1]; 
+      if (current.winner || current.squares[action.squareIndex])
+        return state; 
+
+      const squares = current.squares.slice();
+      squares[action.squareIndex] = current.xRules ? 'X' : 'O';
+
+      return {
+        history: [
+          ...history,
+          {
+            squares: squares,
+            winner: calculateWinner(squares),
+            xRules: !current.xRules
+          }],
+        stepNumber: state.stepNumber + 1
+        };
+    case 'JUMP_TO_MOVE':
+      return {
+        ...state,
+        stepNumber: action.step
+      }
+    default:
+      return state
+  }
+};
 
 injectGlobal `
   body {
@@ -53,7 +96,7 @@ const GameInfo = styled.div`
   margin-left: 20px;
 `
 
-const GameMove = styled.ol`
+const GameMoves = styled.ol`
   padding-left: 30px;
 `
 
@@ -66,11 +109,17 @@ const GameBoard = styled.div`
   flex-direction: row;
 `
 
+const GameMove = ({index, text, onClickHandler}) => (
+  <li>
+    <a href="#" onClick = {onClickHandler}>{text}</a>
+  </li>
+);
+
 class Board extends React.Component {
   renderSquare(i) {
     let sq = this.props.squares[i];
     return (
-      <Square value={sq} onClick={() => this.props.onClick(i)}>{sq}</Square>
+      <Square value={sq} onClick={() => store.dispatch({ type: "ADD_MOVE", squareIndex: i })}>{sq}</Square>
     );
   }
 
@@ -98,42 +147,9 @@ class Board extends React.Component {
 }
 
 class Game extends React.Component {
-  constructor () {
-    super();
-    this.state = {
-      history: [{
-        squares: Array(9).fill(null),
-        winner: null,
-        xRules: true
-      }],
-      stepNumber: 0
-    }
-  }
-
-  handleClick(i) {
-      const history = this.state.history.slice(0, this.state.stepNumber + 1);
-      const current = history[history.length-1]; 
-      if (current.winner || current.squares[i])
-      return; 
-      const squares = current.squares.slice();
-      squares[i] = current.xRules ? 'X' : 'O';
-      const winner = calculateWinner(squares);
-      this.setState ({history: history.concat([{
-        squares: squares,
-        winner: winner,
-        xRules: !current.xRules}]), 
-        stepNumber: history.length});
-  }
-
-  jumpTo(step) {
-    this.setState({
-      stepNumber: step
-    });
-  }
-
   render() {
-    const history = this.state.history;
-    const current = history[this.state.stepNumber];
+    const history = this.props.history;
+    const current = history[this.props.stepNumber];
 
     const moves = history.map((step, i) => {
       const desc = i ?
@@ -141,9 +157,7 @@ class Game extends React.Component {
         'Si comincia!';
 
         return (
-            <li key={i}>
-              <a href="#" onClick = {() => this.jumpTo(i)}>{desc}</a>
-            </li>
+            <GameMove text={desc} onClickHandler={() => store.dispatch({ type: "JUMP_TO_MOVE", step: i })} />
         );
 
     });
@@ -158,10 +172,10 @@ class Game extends React.Component {
 
     return (
       <GameBoard>
-        <Board squares ={current.squares} onClick = {(i) => this.handleClick(i)} />
+        <Board squares = {current.squares} />
         <GameInfo>
           <GameStatus>{status}</GameStatus>
-          <GameMove>{moves}</GameMove>
+          <GameMoves>{moves}</GameMoves>
         </GameInfo>
       </GameBoard>
     );
@@ -190,7 +204,13 @@ function calculateWinner(squares) {
 
 // ========================================
 
-ReactDOM.render(
-  <Game />,
-  document.getElementById('root')
-);
+const store = createStore(historyApp);
+
+const render = () => {ReactDOM.render(
+    <Game {...store.getState()} />,
+    document.getElementById('root')
+  );
+}
+
+store.subscribe(render);
+render();
