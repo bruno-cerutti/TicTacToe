@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styled, { css, injectGlobal } from 'styled-components';
 import { createStore } from 'redux';
+import { Provider } from 'react-redux';
 
 const historyApp = (state, action) => {
   if(state === undefined){
@@ -109,59 +110,90 @@ const GameBoard = styled.div`
   flex-direction: row;
 `
 
-const GameMove = ({index, text, onClickHandler}) => (
+const GameMove = ({text, onClickHandler}) => (
   <li>
     <a href="#" onClick = {onClickHandler}>{text}</a>
   </li>
 );
 
 class Board extends React.Component {
-  renderSquare(i) {
-    let sq = this.props.squares[i];
+  componentDidMount() {
+    const { store } = this.context;
+    this.unsubscribe = store.subscribe(() => {
+      this.forceUpdate();
+    });
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe();
+  }
+
+  renderSquare(i, sq) {
+    const { store } = this.context;
     return (
       <Square value={sq} onClick={() => store.dispatch({ type: "ADD_MOVE", squareIndex: i })}>{sq}</Square>
     );
   }
 
   render() {
+    const { store } = this.context;
+    const state = store.getState();
+    const current = state.history[state.stepNumber];
+
     return (
       <div>
         <BoardRow>
-          {this.renderSquare(0)}
-          {this.renderSquare(1)}
-          {this.renderSquare(2)}
+          {this.renderSquare(0, current.squares[0])}
+          {this.renderSquare(1, current.squares[1])}
+          {this.renderSquare(2, current.squares[2])}
         </BoardRow>
         <BoardRow>
-          {this.renderSquare(3)}
-          {this.renderSquare(4)}
-          {this.renderSquare(5)}
+          {this.renderSquare(3, current.squares[3])}
+          {this.renderSquare(4, current.squares[4])}
+          {this.renderSquare(5, current.squares[5])}
         </BoardRow>
         <BoardRow>
-          {this.renderSquare(6)}
-          {this.renderSquare(7)}
-          {this.renderSquare(8)}
+          {this.renderSquare(6, current.squares[6])}
+          {this.renderSquare(7, current.squares[7])}
+          {this.renderSquare(8, current.squares[8])}
         </BoardRow>
       </div>
     );
   }
 }
+Board.contextTypes = {
+  store: React.PropTypes.object
+};
 
 class Game extends React.Component {
-  render() {
-    const history = this.props.history;
-    const current = history[this.props.stepNumber];
+  componentDidMount() {
+    const { store } = this.context;
+    this.unsubscribe = store.subscribe(() => {
+      this.forceUpdate();
+    });
+  }
 
+  componentWillUnmount() {
+    this.unsubscribe();
+  }
+
+  render() {
+    const { store } = this.context;
+    const state = store.getState();
+
+    const history = state.history;
     const moves = history.map((step, i) => {
       const desc = i ?
         'Mossa n°' + i :
         'Si comincia!';
 
         return (
-            <GameMove text={desc} onClickHandler={() => store.dispatch({ type: "JUMP_TO_MOVE", step: i })} />
+            <GameMove key={i}  text={desc} onClickHandler={() => store.dispatch({ type: "JUMP_TO_MOVE", step: i })} />
         );
 
     });
 
+    const current = history[state.stepNumber];
     let status;
     if (current.winner) {
         status = 'Winner is: ' + current.winner;
@@ -181,6 +213,9 @@ class Game extends React.Component {
     );
   }
 }
+Game.contextTypes = {
+  store: React.PropTypes.object
+};
 
 function calculateWinner(squares) {
   const lines = [
@@ -204,13 +239,9 @@ function calculateWinner(squares) {
 
 // ========================================
 
-const store = createStore(historyApp);
-
-const render = () => {ReactDOM.render(
-    <Game {...store.getState()} />,
-    document.getElementById('root')
-  );
-}
-
-store.subscribe(render);
-render();
+ReactDOM.render(
+  <Provider store={createStore(historyApp)}>
+    <Game />
+  </Provider>,
+  document.getElementById('root')
+);
