@@ -5,45 +5,53 @@ import { createStore } from 'redux';
 import { Provider, connect } from 'react-redux';
 
 const historyApp = (state, action) => {
-  if(state === undefined){
-    state = {
-      history: [{
-          squares: Array(9).fill(null),
-          winner: null,
-          xRules: true
-        }],
-      stepNumber: 0
-      };
-  }
-
-  switch (action.type) {
-    case 'ADD_MOVE':
-      const history = state.history.slice(0, state.stepNumber + 1);
-      const current = history[history.length-1]; 
-      if (current.winner || current.squares[action.squareIndex])
-        return state; 
-
-      const squares = current.squares.slice();
-      squares[action.squareIndex] = current.xRules ? 'X' : 'O';
-
-      return {
-        history: [
-          ...history,
-          {
-            squares: squares,
-            winner: calculateWinner(squares),
-            xRules: !current.xRules
-          }],
-        stepNumber: state.stepNumber + 1
+    if (state === undefined) {
+        state = {
+            history: [{
+                squares: Array(9).fill(null),
+                winner: null,
+                xRules: true
+            }],
+            stepNumber: 0
         };
-    case 'JUMP_TO_MOVE':
-      return {
-        ...state,
-        stepNumber: action.step
-      }
-    default:
-      return state
-  }
+    }
+
+    switch (action.type) {
+        case 'ADD_MOVE':
+            const history = state.history.slice(0, state.stepNumber + 1);
+            const current = history[history.length - 1];
+            if (current.winner || current.squares[action.squareIndex])
+                return state;
+
+            const squares = current.squares.slice();
+            squares[action.squareIndex] = current.xRules ? 'X' : 'O';
+
+            return {
+                history: [
+                    ...history,
+                    {
+                        squares: squares,
+                        winner: calculateWinner(squares),
+                        xRules: !current.xRules
+                    }
+                ],
+                stepNumber: state.stepNumber + 1
+            };
+        case 'JUMP_TO_MOVE':
+            return {
+                ...state,
+                stepNumber: action.step
+            }
+        default:
+            return state
+    }
+};
+
+const addMove = (squareIndex) => {
+    return { type: "ADD_MOVE", squareIndex }
+};
+const jumpToMove = (step) => {
+    return { type: "JUMP_TO_MOVE", step };
 };
 
 injectGlobal `
@@ -122,7 +130,7 @@ const mapStateToBoardProps = (state) => {
 };
 const mapDispatchToBoardProps = (dispatch) => {
   return {
-    onSquareClick: (i) => dispatch({ type: "ADD_MOVE", squareIndex: i })
+    onSquareClick: (i) => dispatch(addMove(i))
   }
 };
 let Board = ({history, stepNumber, onSquareClick}) => {
@@ -150,57 +158,45 @@ let Board = ({history, stepNumber, onSquareClick}) => {
 }
 Board = connect(mapStateToBoardProps, mapDispatchToBoardProps)(Board);
 
-class Game extends React.Component {
-  componentDidMount() {
-    const { store } = this.context;
-    this.unsubscribe = store.subscribe(() => {
-      this.forceUpdate();
-    });
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-
-  render() {
-    const { store } = this.context;
-    const state = store.getState();
-
-    const history = state.history;
-    const moves = history.map((step, i) => {
-      const desc = i ?
-        'Mossa n°' + i :
-        'Si comincia!';
-
-        return (
-            <GameMove key={i}  text={desc} onClickHandler={() => store.dispatch({ type: "JUMP_TO_MOVE", step: i })} />
-        );
-
-    });
-
-    const current = history[state.stepNumber];
-    let status;
-    if (current.winner) {
-        status = 'Winner is: ' + current.winner;
-    }
-    else {
-        status = 'Next player: ' + (current.xRules ? 'X' : 'O');
-    }
-
-    return (
-      <GameBoard>
-        <Board />
-        <GameInfo>
-          <GameStatus>{status}</GameStatus>
-          <GameMoves>{moves}</GameMoves>
-        </GameInfo>
-      </GameBoard>
-    );
-  }
-}
-Game.contextTypes = {
-  store: React.PropTypes.object
+const mapStateToGameProps = (state) => {
+  return {...state};
 };
+const mapDispatchToGameProps = (dispatch) => {
+  return {
+    onGameMoveClick: (i) => dispatch(jumpToMove(i))
+  }
+};
+let Game = ({history, stepNumber, onGameMoveClick}) => {
+  const moves = history.map((step, i) => {
+    const desc = i ?
+      'Mossa n°' + i :
+      'Si comincia!';
+
+      return (
+          <GameMove key={i}  text={desc} onClickHandler={() => onGameMoveClick(i)} />
+      );
+  });
+
+  const current = history[stepNumber];
+  let status;
+  if (current.winner) {
+      status = 'Winner is: ' + current.winner;
+  }
+  else {
+      status = 'Next player: ' + (current.xRules ? 'X' : 'O');
+  }
+
+  return (
+    <GameBoard>
+      <Board />
+      <GameInfo>
+        <GameStatus>{status}</GameStatus>
+        <GameMoves>{moves}</GameMoves>
+      </GameInfo>
+    </GameBoard>
+  );
+}
+Game = connect(mapStateToGameProps, mapDispatchToGameProps)(Game);
 
 function calculateWinner(squares) {
   const lines = [
